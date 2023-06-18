@@ -170,6 +170,11 @@ campsiteRouter.route('/:campsiteId/comments/:commentId')
         Campsite.findById(req.params.campsiteId)
             .then(campsite => {
                 if (campsite && campsite.comments.id(req.params.commentId)) {
+                    if (!campsite.comments.id(req.params.commentId).author.equals(req.user._id)) {
+                        const err = new Error('You are not authorized to modify this comment!');
+                        err.status = 403;
+                        return next(err);
+                    }
                     if (req.body.rating) {
                         campsite.comments.id(req.params.commentId).rating = req.body.rating;
                     }
@@ -199,6 +204,11 @@ campsiteRouter.route('/:campsiteId/comments/:commentId')
         Campsite.findById(req.params.campsiteId)
             .then(campsite => {
                 if (campsite && campsite.comments.id(req.params.commentId)) {
+                    if (!campsite.comments.id(req.params.commentId).author.equals(req.user._id)) {
+                        const err = new Error('You are not authorized to delete this comment!');
+                        err.status = 403;
+                        return next(err);
+                    }
                     campsite.comments.id(req.params.commentId).remove();
                     campsite.save()
                         .then(campsite => {
