@@ -5,8 +5,15 @@ const authenticate = require('../authenticate');
 
 const router = express.Router();
 
-router.get('/', function (req, res, next) {
-    res.send('respond with a resource');
+router.get('/', authenticate.verifyUser, authenticate.verifyAdmin, function (req, res, next) {
+    // res.send(req.body);
+    User.find()
+    .then(user => {
+        res.statusCode = 200;
+        res.setHeader('Content-Type', 'application/json');
+        res.json(user);
+    })
+    .catch(err => next(err));
 });
 
 router.post('/signup', (req, res) => {
@@ -61,5 +68,54 @@ router.get('/logout', (req, res, next) => {
         return next(err);
     }
 });
+
+router.delete('/:userId', authenticate.verifyUser, (req, res, next) => {
+    User.findByIdAndRemove(req.params.userId)
+        .then(user => {
+            if (user) {
+                res.statusCode = 200;
+                res.setHeader('Content-Type', 'application/json');
+                res.json({ success: true, message: 'User deleted successfully' });
+            } else {
+                const err = new Error('User not found');
+                err.status = 404;
+                return next(err);
+            }
+        })
+        .catch(err => next(err));
+});
+
+router.put('/:userId', authenticate.verifyUser, (req, res, next) => {
+    User.findByIdAndUpdate(req.params.userId, { $set: req.body }, { new: true })
+        .then(user => {
+            if (user) {
+                res.statusCode = 200;
+                res.setHeader('Content-Type', 'application/json');
+                res.json({ success: true, user: user });
+            } else {
+                const err = new Error('User not found');
+                err.status = 404;
+                return next(err);
+            }
+        })
+        .catch(err => next(err));
+});
+
+router.get('/whoami', authenticate.verifyUser, (req, res, next) => {
+    User.findById(req.user._id)
+        .then(user => {
+            if (user) {
+                res.statusCode = 200;
+                res.setHeader('Content-Type', 'application/json');
+                res.json(user);
+            } else {
+                const err = new Error('User not found');
+                err.status = 404;
+                return next(err);
+            }
+        })
+        .catch(err => next(err));
+});
+
 
 module.exports = router;
