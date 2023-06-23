@@ -2,10 +2,11 @@ const express = require('express');
 const User = require('../models/user');
 const passport = require('passport');
 const authenticate = require('../authenticate');
+const cors = require('./cors');
 
 const router = express.Router();
 
-router.get('/', authenticate.verifyUser, authenticate.verifyAdmin, function (req, res, next) {
+router.get('/', cors.corsWithOptions, authenticate.verifyUser, authenticate.verifyAdmin, function (req, res, next) {
     // res.send(req.body);
     User.find()
     .then(user => {
@@ -16,7 +17,7 @@ router.get('/', authenticate.verifyUser, authenticate.verifyAdmin, function (req
     .catch(err => next(err));
 });
 
-router.post('/signup', (req, res) => {
+router.post('/signup', cors.corsWithOptions, (req, res) => {
     User.register(
         new User({ username: req.body.username }),
         req.body.password,
@@ -50,14 +51,14 @@ router.post('/signup', (req, res) => {
     );
 });
 
-router.post('/login', passport.authenticate('local'), (req, res) => {
+router.post('/login', cors.corsWithOptions, passport.authenticate('local'), (req, res) => {
     const token = authenticate.getToken({ _id: req.user._id });
     res.statusCode = 200;
     res.setHeader('Content-Type', 'application/json');
     res.json({ success: true, token: token, status: 'You are successfully logged in!' });
 });
 
-router.get('/logout', (req, res, next) => {
+router.get('/logout', cors.corsWithOptions, (req, res, next) => {
     if (req.session) {
         req.session.destroy();
         res.clearCookie('session-id');
@@ -69,7 +70,7 @@ router.get('/logout', (req, res, next) => {
     }
 });
 
-router.delete('/:userId', authenticate.verifyUser, (req, res, next) => {
+router.delete('/:userId', cors.corsWithOptions, authenticate.verifyUser, (req, res, next) => {
     User.findByIdAndRemove(req.params.userId)
         .then(user => {
             if (user) {
@@ -85,7 +86,7 @@ router.delete('/:userId', authenticate.verifyUser, (req, res, next) => {
         .catch(err => next(err));
 });
 
-router.put('/:userId', authenticate.verifyUser, (req, res, next) => {
+router.put('/:userId', cors.corsWithOptions, authenticate.verifyUser, (req, res, next) => {
     User.findByIdAndUpdate(req.params.userId, { $set: req.body }, { new: true })
         .then(user => {
             if (user) {
@@ -101,7 +102,7 @@ router.put('/:userId', authenticate.verifyUser, (req, res, next) => {
         .catch(err => next(err));
 });
 
-router.get('/whoami', authenticate.verifyUser, (req, res, next) => {
+router.get('/whoami', cors.corsWithOptions, authenticate.verifyUser, (req, res, next) => {
     User.findById(req.user._id)
         .then(user => {
             if (user) {
